@@ -1239,7 +1239,7 @@
 			border-style: solid;
 			border-color: #ffffff;
 			border-top-width: 1px;
-			border-bottom-width: 1px;
+			border-bottom-width: 0;
 			max-width: 100%;
 		}
 
