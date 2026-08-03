@@ -1577,6 +1577,16 @@
 			text-transform: uppercase;
 		}
 
+			#footer .copyright a {
+				border-bottom: none;
+			}
+
+				#footer .copyright a:hover {
+					border-bottom: dotted 1px rgba(255, 255, 255, 0.5);
+				}
+				#footer .copyright .pencil-icon {
+					display: inline-block;
+				}
 		body.is-article-visible #footer {
 			-moz-transform: scale(0.95);
 			-webkit-transform: scale(0.95);
