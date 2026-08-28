@@ -4,27 +4,64 @@
    Blends onto the existing #bg dark background; no new color palette.
    ========================================================================== */
 
+/* main.css sets html{font-size:16pt} with THREE separate media queries
+   (1680px, 736px, 360px) that change it further. Since every measurement
+   in this file is in rem, all of it was silently jumping to different
+   actual pixel values at those thresholds — independent of our own
+   40rem breakpoint — which is what caused both the resize jumpiness and
+   the nav landing in unexpected places at certain widths. Locking it
+   here keeps our rem math consistent at every window size. Scoped to
+   this file only, so the homepage's own responsive type sizing (which
+   this rule doesn't touch) is unaffected. */
+html {
+	font-size: 16px !important;
+}
+
+/* Dimension is built as a single-screen hero page and isn't expecting
+   content taller than the viewport, so without an explicit allowance
+   here, tall content (many albums, or a short window) can end up
+   visually clipped at the bottom with no way to scroll to it. */
+html,
+body {
+	overflow-y: auto !important;
+	overflow-x: hidden !important;
+	height: auto !important;
+}
+
+/* Confirmed via main.css: #wrapper is `display:flex; flex-direction:column;
+   justify-content:space-between; min-height:100vh;`, and #wrapper:before
+   is an empty flex item. With only that empty item and our real content
+   as the two flex children, space-between pushes our content toward the
+   bottom — and that gap grows as the viewport gets taller, which is
+   exactly the drift we saw. This file only loads on the photos pages, so
+   it's safe to switch #wrapper back to plain top-aligned block layout
+   here without touching the homepage. Padding is zeroed too, since with
+   display:block that padding would otherwise stack on top of
+   .photos-wrapper's own padding instead of being absorbed into the
+   flex centering like it was before. */
+body,
+#wrapper {
+	display: block !important;
+	align-items: normal !important;
+	justify-content: normal !important;
+	min-height: 0 !important;
+	height: auto !important;
+	padding: 0 !important;
+}
+
+#wrapper:before {
+	display: none !important;
+}
+
 .photos-wrapper {
-	max-width: 26rem;
+	max-width: 44rem;
 	margin: 0 auto;
 	padding: 3rem 2rem 2rem;
 }
 
-/* ---------- Fixed nav block: Home + album list, pinned to the left
-   edge of the viewport, independent of the centered stack content ---------- */
-
-.photos-nav-fixed {
-	position: fixed;
-	top: 3rem;
-	right: calc(50vw + 16rem);
-	display: flex;
-	flex-direction: column;
-	gap: 2rem;
-	z-index: 10;
-}
-
 .photos-back {
 	display: inline-block;
+	margin-bottom: 2rem;
 	opacity: 0.7;
 	text-decoration: none;
 	border-bottom: 1px dotted transparent;
@@ -37,6 +74,7 @@
 	padding: 0 !important;
 	-webkit-appearance: none;
 	appearance: none;
+	white-space: nowrap;
 }
 
 .photos-back:hover {
@@ -44,7 +82,38 @@
 	border-bottom-color: currentColor;
 }
 
+/* ---------- Row: sidebar nav list + main stack content, side by side.
+   Home lives above this row (as a separate block, see .photos-back)
+   rather than inside it — that way both columns here start completely
+   fresh with nothing above them, so align-items:flex-start lines up the
+   nav's first item with the stack's first title exactly, with no
+   measurement or hardcoded offset needed at all. Normal document flow
+   throughout — no position:fixed, no viewport-relative calc(). The page
+   never scrolls at this size, so there's no real need for fixed
+   positioning, and every fixed/calc()-based approach we tried turned out
+   to be fragile in ways that were hard to fully pin down and patch. ---------- */
+
+.photos-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 3rem;
+}
+
+/* Hamburger toggle — hidden on wide screens, shown (and functional) only
+   within the mobile breakpoint below. Reuses .icon-btn's circular styling.
+   !important guards against .icon-btn's own display:flex (equal
+   specificity, defined later in this file) silently winning. */
+.nav-toggle {
+	display: none !important;
+	position: fixed;
+	bottom: 2rem;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 21;
+}
+
 #sidebar-nav {
+	flex: 0 0 auto;
 	display: flex;
 	flex-direction: column;
 	gap: 0.6rem;
@@ -61,6 +130,7 @@
 	padding: 0;
 	font: inherit;
 	cursor: pointer;
+	white-space: nowrap;
 }
 
 #sidebar-nav a:hover,
@@ -69,11 +139,8 @@
 }
 
 .photos-main {
-	width: 100%;
-	/* Pulls the first title up to line up with the nav's first item.
-	   This single number is the only thing to tune — increase the
-	   negative value to raise it further, decrease to lower it. */
-	margin-top: -13rem;
+	flex: 1;
+	min-width: 0;
 }
 
 .album-section {
@@ -114,6 +181,7 @@
 	font-weight: 400;
 	letter-spacing: normal;
 	text-transform: none;
+	white-space: nowrap;
 }
 
 .photos-subtitle {
@@ -126,14 +194,18 @@
 
 .polaroid-stack {
 	position: relative;
-	width: 100%;
-	max-width: 10rem;
-	aspect-ratio: 4 / 5;
+	width: 8.5rem;
+	height: 10.625rem;
 	margin: 0 auto;
 	cursor: pointer;
 	opacity: 1;
 	transform: scale(1);
-	transition: opacity 0.3s ease, transform 0.3s ease;
+	/* No persistent transition here — JS grants one temporarily via
+	   inline style right before toggling is-fading (expand/collapse),
+	   then clears it. A permanent transition here was letting any
+	   resize-triggered layout recalculation animate visibly even when
+	   the final value hadn't actually changed, which was the real
+	   cause of the resize jumpiness. */
 }
 
 .polaroid-stack.is-fading {
@@ -149,7 +221,8 @@
 .polaroid-stack .stack-item {
 	position: absolute;
 	inset: 0;
-	transition: transform 0.35s ease;
+	/* Same reasoning — no persistent transition. JS adds one temporarily
+	   on mouseenter/mouseleave for the hover fan-out effect. */
 }
 
 .polaroid-stack .stack-item .polaroid {
@@ -161,15 +234,22 @@
 .polaroid-stack .stack-item:nth-child(3) { z-index: 3; }
 .polaroid-stack .stack-item:nth-child(4) { z-index: 4; }
 
-.polaroid-stack .stack-item:nth-child(1) { transform: rotate(-11deg) translate(-14%, 8%); }
-.polaroid-stack .stack-item:nth-child(2) { transform: rotate(-4deg) translate(-6%, 4%); }
-.polaroid-stack .stack-item:nth-child(3) { transform: rotate(4deg) translate(5%, 1%); }
-.polaroid-stack .stack-item:nth-child(4) { transform: rotate(10deg) translate(11%, -1%); }
+/* Fixed rem values, not percentages — the stack is always exactly 8.5rem,
+   so these are just percentages pre-multiplied against that. Percentage
+   translate() values recompute relative to the element's own box on any
+   resize-triggered layout pass, and since transform has a transition,
+   that recomputation was firing the transition visibly even when the
+   resulting pixel value hadn't actually changed — that was the real
+   cause of the resize jumpiness. */
+.polaroid-stack .stack-item:nth-child(1) { transform: rotate(-11deg) translate(-1.19rem, 0.85rem); }
+.polaroid-stack .stack-item:nth-child(2) { transform: rotate(-4deg) translate(-0.51rem, 0.425rem); }
+.polaroid-stack .stack-item:nth-child(3) { transform: rotate(4deg) translate(0.425rem, 0.106rem); }
+.polaroid-stack .stack-item:nth-child(4) { transform: rotate(10deg) translate(0.935rem, -0.106rem); }
 
-.polaroid-stack:hover .stack-item:nth-child(1) { transform: rotate(-15deg) translate(-20%, 11%); }
-.polaroid-stack:hover .stack-item:nth-child(2) { transform: rotate(-6deg) translate(-9%, 5%); }
-.polaroid-stack:hover .stack-item:nth-child(3) { transform: rotate(6deg) translate(8%, 0%); }
-.polaroid-stack:hover .stack-item:nth-child(4) { transform: rotate(14deg) translate(16%, -4%); }
+.polaroid-stack:hover .stack-item:nth-child(1) { transform: rotate(-15deg) translate(-1.7rem, 1.169rem); }
+.polaroid-stack:hover .stack-item:nth-child(2) { transform: rotate(-6deg) translate(-0.765rem, 0.531rem); }
+.polaroid-stack:hover .stack-item:nth-child(3) { transform: rotate(6deg) translate(0.68rem, 0); }
+.polaroid-stack:hover .stack-item:nth-child(4) { transform: rotate(14deg) translate(1.36rem, -0.425rem); }
 
 /* Individual-photo hover — highlight only the frame itself. No movement,
    no scale, no un-rotating, no z-index change: just the visible polaroid
@@ -200,19 +280,11 @@
 
 .gallery-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-	gap: 2rem;
-	max-width: 48rem;
+	grid-template-columns: repeat(4, 8.5rem);
+	justify-content: center;
+	gap: 1.5rem;
 	margin: 0 auto;
-	padding-top: 1rem;
-	opacity: 0;
-	transform: translateY(14px);
-	transition: opacity 0.35s ease, transform 0.35s ease;
-}
-
-.gallery-grid.is-visible {
-	opacity: 1;
-	transform: translateY(0);
+	padding: 1rem 1.5rem 1.25rem;
 }
 
 .gallery-grid.is-hidden {
@@ -233,10 +305,6 @@
 	box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.5);
 }
 
-.gallery-grid .polaroid img {
-	aspect-ratio: 4 / 5;
-}
-
 .grid-close-wrap {
 	display: flex;
 	justify-content: center;
@@ -251,6 +319,15 @@
 
 .grid-close-wrap.is-hidden {
 	display: none;
+}
+
+/* While viewing a photo in the lightbox, hide the "collapse grid back to
+   stack" button — otherwise it faintly shows through the lightbox's
+   semi-transparent backdrop, reading as a stray close button in the
+   photo view when it's actually meant only for returning from the
+   expanded grid to the stack. */
+body.lightbox-open .grid-close-wrap {
+	visibility: hidden;
 }
 
 .icon-btn {
@@ -367,19 +444,42 @@
 
 @media (max-width: 40rem) {
 	.photos-wrapper {
-		padding: 4rem 1.25rem 3rem;
+		padding: 3rem 1.25rem 3rem;
 	}
 
-	.photos-nav-fixed {
-		position: static;
+	.photos-row {
+		flex-direction: column;
+		align-items: stretch;
 		gap: 1.25rem;
-		margin-bottom: 2.5rem;
+	}
+
+	.gallery-grid {
+		grid-template-columns: repeat(2, 8.5rem);
+	}
+
+	.nav-toggle {
+		display: flex !important;
 	}
 
 	#sidebar-nav {
-		flex-direction: row;
-		flex-wrap: wrap;
-		gap: 1.25rem;
+		display: none;
+		position: fixed;
+		bottom: 5.5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgba(20, 22, 28, 0.95);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		border-radius: 0.75rem;
+		padding: 1rem 1.75rem;
+		gap: 0.75rem;
+		z-index: 20;
+		box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.5);
+		white-space: nowrap;
+		text-align: center;
+	}
+
+	#sidebar-nav.is-open {
+		display: flex;
 	}
 
 	.lightbox .lightbox-nav {
