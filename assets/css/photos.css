@@ -1,0 +1,392 @@
+/* ==========================================================================
+   Photos section — sidebar nav + fanned polaroid stacks that expand
+   in place into a gallery grid, plus a lightbox with prev/next.
+   Blends onto the existing #bg dark background; no new color palette.
+   ========================================================================== */
+
+.photos-wrapper {
+	max-width: 26rem;
+	margin: 0 auto;
+	padding: 3rem 2rem 2rem;
+}
+
+/* ---------- Fixed nav block: Home + album list, pinned to the left
+   edge of the viewport, independent of the centered stack content ---------- */
+
+.photos-nav-fixed {
+	position: fixed;
+	top: 3rem;
+	right: calc(50vw + 16rem);
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+	z-index: 10;
+}
+
+.photos-back {
+	display: inline-block;
+	opacity: 0.7;
+	text-decoration: none;
+	border-bottom: 1px dotted transparent;
+	border-top: none !important;
+	border-left: none !important;
+	border-right: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+	background: none !important;
+	padding: 0 !important;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.photos-back:hover {
+	opacity: 1;
+	border-bottom-color: currentColor;
+}
+
+#sidebar-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+
+#sidebar-nav a {
+	text-decoration: none;
+	color: inherit;
+	opacity: 0.45;
+	transition: opacity 0.2s ease;
+	background: none;
+	border: none;
+	text-align: left;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+}
+
+#sidebar-nav a:hover,
+#sidebar-nav a.is-current {
+	opacity: 1;
+}
+
+.photos-main {
+	width: 100%;
+	/* Pulls the first title up to line up with the nav's first item.
+	   This single number is the only thing to tune — increase the
+	   negative value to raise it further, decrease to lower it. */
+	margin-top: -13rem;
+}
+
+.album-section {
+	text-align: center;
+	margin-bottom: 2rem;
+	scroll-margin-top: 2rem;
+}
+
+.album-section:last-child {
+	margin-bottom: 0;
+}
+
+.album-section-title {
+	text-decoration: none;
+	color: inherit;
+	display: inline-block;
+	margin-bottom: 1.25rem;
+	opacity: 0.85;
+	transition: opacity 0.2s ease;
+	background: none !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	font: inherit;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.album-section-title:hover {
+	opacity: 1;
+}
+
+.album-section-title h2 {
+	margin: 0;
+	font-size: 1em;
+	font-weight: 400;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+.photos-subtitle {
+	text-align: center;
+	opacity: 0.5;
+	margin: -1rem 0 3.5rem;
+}
+
+/* ---------- Fanned 4-photo stack ---------- */
+
+.polaroid-stack {
+	position: relative;
+	width: 100%;
+	max-width: 10rem;
+	aspect-ratio: 4 / 5;
+	margin: 0 auto;
+	cursor: pointer;
+	opacity: 1;
+	transform: scale(1);
+	transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.polaroid-stack.is-fading {
+	opacity: 0;
+	transform: scale(0.96);
+	pointer-events: none;
+}
+
+.polaroid-stack.is-hidden {
+	display: none;
+}
+
+.polaroid-stack .stack-item {
+	position: absolute;
+	inset: 0;
+	transition: transform 0.35s ease;
+}
+
+.polaroid-stack .stack-item .polaroid {
+	transition: box-shadow 0.2s ease;
+}
+
+.polaroid-stack .stack-item:nth-child(1) { z-index: 1; }
+.polaroid-stack .stack-item:nth-child(2) { z-index: 2; }
+.polaroid-stack .stack-item:nth-child(3) { z-index: 3; }
+.polaroid-stack .stack-item:nth-child(4) { z-index: 4; }
+
+.polaroid-stack .stack-item:nth-child(1) { transform: rotate(-11deg) translate(-14%, 8%); }
+.polaroid-stack .stack-item:nth-child(2) { transform: rotate(-4deg) translate(-6%, 4%); }
+.polaroid-stack .stack-item:nth-child(3) { transform: rotate(4deg) translate(5%, 1%); }
+.polaroid-stack .stack-item:nth-child(4) { transform: rotate(10deg) translate(11%, -1%); }
+
+.polaroid-stack:hover .stack-item:nth-child(1) { transform: rotate(-15deg) translate(-20%, 11%); }
+.polaroid-stack:hover .stack-item:nth-child(2) { transform: rotate(-6deg) translate(-9%, 5%); }
+.polaroid-stack:hover .stack-item:nth-child(3) { transform: rotate(6deg) translate(8%, 0%); }
+.polaroid-stack:hover .stack-item:nth-child(4) { transform: rotate(14deg) translate(16%, -4%); }
+
+/* Individual-photo hover — highlight only the frame itself. No movement,
+   no scale, no un-rotating, no z-index change: just the visible polaroid
+   edge lighting up so it's clear which one you're about to click. Now that
+   the rotation lives on .stack-item itself, hover hit-testing follows the
+   actual rotated shape instead of each card's full (overlapping) box. */
+.polaroid-stack .stack-item:hover .polaroid {
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55), 0 0.75rem 1.75rem rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Polaroid frame (shared) — generous mat, true polaroid ratio ---------- */
+
+.polaroid {
+	background: #fff;
+	padding: 7% 7% 10%;
+	box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.45);
+	border-radius: 2px;
+}
+
+.polaroid img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* ---------- Expanded gallery grid (in-place, inside an album-section) ---------- */
+
+.gallery-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+	gap: 2rem;
+	max-width: 48rem;
+	margin: 0 auto;
+	padding-top: 1rem;
+	opacity: 0;
+	transform: translateY(14px);
+	transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.gallery-grid.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.gallery-grid.is-hidden {
+	display: none;
+}
+
+.polaroid-stack.is-hidden {
+	display: none;
+}
+
+.gallery-grid .polaroid {
+	cursor: pointer;
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.gallery-grid .polaroid:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.5);
+}
+
+.gallery-grid .polaroid img {
+	aspect-ratio: 4 / 5;
+}
+
+.grid-close-wrap {
+	display: flex;
+	justify-content: center;
+	margin-top: 2.5rem;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.grid-close-wrap.is-visible {
+	opacity: 1;
+}
+
+.grid-close-wrap.is-hidden {
+	display: none;
+}
+
+.icon-btn {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 50%;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.06);
+	color: #eee;
+	cursor: pointer;
+	transition: background 0.2s ease, transform 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	line-height: 1;
+}
+
+.icon-btn:hover {
+	background: rgba(255, 255, 255, 0.14);
+}
+
+.icon-btn svg {
+	width: 1rem;
+	height: 1rem;
+	display: block;
+}
+
+.grid-close-btn:hover {
+	transform: scale(1.05);
+}
+
+/* ---------- Lightbox, with prev/next ---------- */
+
+.lightbox {
+	position: fixed;
+	inset: 0;
+	background: rgba(20, 22, 28, 0.72);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	z-index: 1000;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.35s ease;
+	padding: 2rem;
+}
+
+.lightbox.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.lightbox .lightbox-frame {
+	background: #fff;
+	padding: 3% 3% 5%;
+	box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.6);
+	max-width: min(90vw, 42rem);
+	max-height: 78vh;
+	transform: scale(0.82);
+	transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+	will-change: transform;
+}
+
+.lightbox.is-open .lightbox-frame {
+	transform: scale(1);
+}
+
+.lightbox img {
+	display: block;
+	max-width: 100%;
+	max-height: calc(78vh - 4rem);
+	object-fit: contain;
+}
+
+.lightbox .lightbox-caption {
+	color: #eee;
+	margin-top: 1.25rem;
+	font-size: 0.95em;
+	opacity: 0.8;
+	text-align: center;
+}
+
+.lightbox .lightbox-close {
+	position: absolute;
+	top: 1.5rem;
+	right: 2rem;
+}
+
+.lightbox .lightbox-close svg {
+	width: 1.1rem;
+	height: 1.1rem;
+}
+
+.lightbox .lightbox-nav {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.lightbox .lightbox-nav svg {
+	width: 1.15rem;
+	height: 1.15rem;
+}
+
+.lightbox .lightbox-prev {
+	left: 1.5rem;
+}
+
+.lightbox .lightbox-next {
+	right: 1.5rem;
+}
+
+@media (max-width: 40rem) {
+	.photos-wrapper {
+		padding: 4rem 1.25rem 3rem;
+	}
+
+	.photos-nav-fixed {
+		position: static;
+		gap: 1.25rem;
+		margin-bottom: 2.5rem;
+	}
+
+	#sidebar-nav {
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 1.25rem;
+	}
+
+	.lightbox .lightbox-nav {
+		width: 2.25rem;
+		height: 2.25rem;
+	}
+
+	.lightbox .lightbox-prev { left: 0.5rem; }
+	.lightbox .lightbox-next { right: 0.5rem; }
+}
