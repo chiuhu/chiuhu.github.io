@@ -9,8 +9,18 @@
 		<title>Hiuhu</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="description" content="Hiuhu.com is currently being redesigned. Please check back soon." />
+		<meta name="description" content="Hiuhu." />
 		<link rel="stylesheet" href="assets/css/main.css" />
+		<style>
+			#tagline {
+				text-transform: none !important;
+			}
+
+			#header .content .inner {
+				padding-top: 1.5rem !important;
+				padding-bottom: 1.5rem !important;
+			}
+		</style>
 		<noscript>
 			<link rel="stylesheet" href="assets/css/noscript.css" />
 		</noscript>
@@ -18,37 +28,51 @@
 		<link rel="icon" href="/images/hiuhu.com_favicon.png" type="image/x-icon">
 	</head>
 	<body>
-
 		<!-- Wrapper -->
 		<div id="wrapper">
-
 			<!-- Header -->
 			<header id="header">
 				<div class="content">
 					<div class="inner">
-						<h1>Redesigning</h1>
-						<p>please check back in a bit</p>
+						<h1>Hiuhu</h1>
+						<p id="tagline" data-text="always a work in progress"></p>
 					</div>
 				</div>
 			</header>
-
 			<!-- Main -->
-
 			<!-- Footer -->
 			<footer id="footer">
 				<p class="copyright">&copy; Hiuhu | <i class="fa fa-pencil pencil-icon"></i> <a href="https://html5up.net">HTML5 UP</a>.</p>
 			</footer>
-
 		</div>
-
 		<!-- BG -->
 		<div id="bg"></div>
-
 		<!-- Scripts -->
 		<script src="assets/js/jquery.min.js"></script>
 		<script src="assets/js/skel.min.js"></script>
 		<script src="assets/js/util.js"></script>
 		<script src="assets/js/main.js"></script>
-
+		<!-- Typing effect for tagline -->
+		<script>
+			window.addEventListener('load', function () {
+				var el = document.getElementById('tagline');
+				var text = el.getAttribute('data-text');
+				var i = 0;
+				function type() {
+					if (i === 0) {
+						el.classList.add('is-typing');
+					}
+					if (i <= text.length) {
+						el.textContent = text.substring(0, i);
+						i++;
+						setTimeout(type, 75); // typing speed in ms per character
+					} else {
+						el.classList.remove('is-typing');
+					}
+				}
+				// delay start to let the theme's own fade-in finish first
+				setTimeout(type, 1000);
+			});
+		</script>
 	</body>
 </html>

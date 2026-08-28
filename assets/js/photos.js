@@ -71,6 +71,19 @@
 	/* ---------- Overview page ---------- */
 
 	var openSection = null; // { slug, collapse() }
+	var gridBackdropEl = null;
+
+	function ensureGridBackdrop() {
+		if (gridBackdropEl) return;
+		gridBackdropEl = el('div', { class: 'grid-overlay-backdrop' });
+		gridBackdropEl.addEventListener('click', function () {
+			if (openSection) openSection.collapse();
+		});
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && openSection) openSection.collapse();
+		});
+		document.body.appendChild(gridBackdropEl);
+	}
 
 	function renderOverview(albums) {
 		var sidebarNav = document.getElementById('sidebar-nav');
@@ -110,12 +123,21 @@
 
 			var title = el('button', { class: 'album-section-title' }, [el('h2', { text: album.title })]);
 
-			var grid = el('div', { class: 'gallery-grid is-hidden' });
+			var grid = el('div', { class: 'gallery-grid' });
 			var closeBtn = iconButton('grid-close-btn', 'Collapse', closeIcon());
-			var closeWrap = el('div', { class: 'grid-close-wrap is-hidden' }, [closeBtn]);
+			var closeWrap = el('div', { class: 'grid-close-wrap' }, [closeBtn]);
+			var panel = el('div', { class: 'grid-overlay-panel is-hidden' }, [grid, closeWrap]);
 
-			var section = el('div', { class: 'album-section', id: album.slug }, [title, stack, grid, closeWrap]);
+			var section = el('div', { class: 'album-section', id: album.slug }, [title, stack]);
 			main.appendChild(section);
+			// Appended directly to body (not nested inside the section/
+			// #wrapper) — #wrapper has its own position:relative;z-index:3
+			// from the theme's main.css, which traps any z-index set on
+			// its descendants within that local context. Since our panel
+			// needs its z-index:30 to be compared globally against the
+			// backdrop's z-index:29, it has to live outside #wrapper
+			// entirely, same as the backdrop and lightbox already do.
+			document.body.appendChild(panel);
 
 			var gridBuilt = false;
 
@@ -147,25 +169,27 @@
 			}
 
 			function expand() {
+				if (openSection && openSection.slug === album.slug) return;
 				if (openSection && openSection.slug !== album.slug) {
 					openSection.collapse();
 				}
 				buildGrid();
+				ensureGridBackdrop();
 
-				// Capture the stack cards' real on-screen positions before
-				// anything moves.
+				// The stack stays opacity-only hidden (never display:none),
+				// so it keeps occupying its normal layout space the whole
+				// time the overlay is open — meaning this section's height
+				// never changes, and neither does anything below it on the
+				// page. That's what lets other stacks just sit still,
+				// dimmed, in the background instead of needing to react.
 				var stackItems = Array.prototype.slice.call(stack.children);
 				var stackCenters = stackItems.map(centerOf);
-
 				stack.classList.add('is-fading');
-				stack.classList.add('is-hidden');
 
-				// Lay the grid out (display:grid now applies, so layout is
-				// real) — nothing has opacity/transform baggage at the
-				// container level anymore, so this position is final and
-				// stable the moment it's laid out.
-				grid.classList.remove('is-hidden');
-				reflow(grid);
+				panel.classList.remove('is-hidden');
+				reflow(panel);
+				panel.classList.add('is-open');
+				gridBackdropEl.classList.add('is-open');
 
 				var gridChildren = Array.prototype.slice.call(grid.children);
 				var flipCount = Math.min(FLIP_COUNT, gridChildren.length, stackCenters.length);
@@ -188,10 +212,6 @@
 				}
 				reflow(grid);
 
-				closeWrap.classList.remove('is-hidden');
-				reflow(closeWrap);
-				closeWrap.classList.add('is-visible');
-
 				requestAnimationFrame(function () {
 					requestAnimationFrame(function () {
 						for (var i = 0; i < gridChildren.length; i++) {
@@ -208,18 +228,15 @@
 				});
 
 				openSection = { slug: album.slug, collapse: collapse };
+				document.body.classList.add('grid-expanded');
 			}
 
 			function collapse() {
-				// Reveal the stack invisibly (still opacity 0 via
-				// is-fading) just long enough to measure where each card
-				// naturally sits, then hide it again until the animation
-				// finishes.
-				stack.classList.remove('is-hidden');
-				reflow(stack);
+				// Stack was never actually removed from layout, so its
+				// real position can be measured directly — no need to
+				// briefly reveal/re-hide it first.
 				var stackItems = Array.prototype.slice.call(stack.children);
 				var stackCenters = stackItems.map(centerOf);
-				stack.classList.add('is-hidden');
 
 				var gridChildren = Array.prototype.slice.call(grid.children);
 				var flipCount = Math.min(FLIP_COUNT, gridChildren.length, stackCenters.length);
@@ -238,11 +255,11 @@
 					}
 				}
 
-				closeWrap.classList.remove('is-visible');
+				gridBackdropEl.classList.remove('is-open');
+				panel.classList.remove('is-open');
 
 				setTimeout(function () {
-					grid.classList.add('is-hidden');
-					closeWrap.classList.add('is-hidden');
+					panel.classList.add('is-hidden');
 
 					for (var i = 0; i < gridChildren.length; i++) {
 						gridChildren[i].style.transition = 'none';
@@ -250,14 +267,8 @@
 						gridChildren[i].style.opacity = '';
 					}
 
-					stack.classList.remove('is-hidden');
-					reflow(stack);
-					stack.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
 					stack.classList.remove('is-fading');
-
-					setTimeout(function () {
-						stack.style.transition = '';
-					}, 300);
+					if (!openSection) document.body.classList.remove('grid-expanded');
 				}, TRANSITION_MS);
 
 				if (openSection && openSection.slug === album.slug) openSection = null;

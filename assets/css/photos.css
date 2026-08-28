@@ -17,6 +17,16 @@ html {
 	font-size: 16px !important;
 }
 
+/* main.css fades #bg in from black over 2.5s (with a 0.75s delay) —
+   nicely paced against the homepage's typewriter effect, but this page
+   has no such animation to sync with, so settling faster here reads
+   better. Scoped to this file only, so the homepage keeps its original
+   timing untouched. */
+#bg:before {
+	transition-duration: 1.2s !important;
+	transition-delay: 0.3s !important;
+}
+
 /* Dimension is built as a single-screen hero page and isn't expecting
    content taller than the viewport, so without an explicit allowance
    here, tall content (many albums, or a short window) can end up
@@ -24,8 +34,14 @@ html {
 html,
 body {
 	overflow-y: auto !important;
-	overflow-x: hidden !important;
 	height: auto !important;
+	/* Browsers auto-adjust scroll position ("scroll anchoring") when
+	   layout above the current view shrinks — like a grid collapsing
+	   back down to its smaller stack. That's what was causing sections
+	   further down the page to visibly "fall into place" after
+	   collapsing, since their collapse is more likely to trigger the
+	   browser's anchoring than a section already near the top. */
+	overflow-anchor: none;
 }
 
 /* Confirmed via main.css: #wrapper is `display:flex; flex-direction:column;
@@ -60,26 +76,41 @@ body,
 }
 
 .photos-back {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.15rem;
 	margin-bottom: 2rem;
 	opacity: 0.7;
 	text-decoration: none;
-	border-bottom: 1px dotted transparent;
-	border-top: none !important;
-	border-left: none !important;
-	border-right: none !important;
+	border: none !important;
 	outline: none !important;
 	box-shadow: none !important;
 	background: none !important;
 	padding: 0 !important;
 	-webkit-appearance: none;
 	appearance: none;
-	white-space: nowrap;
+	transition: opacity 0.2s ease;
 }
 
 .photos-back:hover {
 	opacity: 1;
-	border-bottom-color: currentColor;
+}
+
+.photos-back-arrow {
+	display: block;
+	width: 1rem;
+	height: 1rem;
+	flex-shrink: 0;
+}
+
+.photos-back img {
+	display: block;
+	width: 3rem;
+	height: 3rem;
+	border-radius: 4px;
+	flex-shrink: 0;
+	margin-left: -0.6rem;
+	filter: brightness(0) invert(1);
 }
 
 /* ---------- Row: sidebar nav list + main stack content, side by side.
@@ -209,13 +240,25 @@ body,
 }
 
 .polaroid-stack.is-fading {
-	opacity: 0;
+	opacity: 0 !important;
 	transform: scale(0.96);
-	pointer-events: none;
+	pointer-events: none !important;
+	visibility: hidden;
 }
 
 .polaroid-stack.is-hidden {
 	display: none;
+}
+
+/* Whenever any panel is open, disable pointer-events on every stack —
+   not just the one that's fading. A stack lower on the page can end up
+   spatially underneath where the centered panel renders, and something
+   about the stacking order was letting it win the hit-test over the
+   panel despite the panel's higher z-index. This is the robust
+   catch-all: no stack can ever intercept a click meant for the panel
+   while one is open, regardless of the exact mechanism. */
+body.grid-expanded .polaroid-stack {
+	pointer-events: none !important;
 }
 
 .polaroid-stack .stack-item {
@@ -276,19 +319,59 @@ body,
 	object-fit: cover;
 }
 
-/* ---------- Expanded gallery grid (in-place, inside an album-section) ---------- */
+/* ---------- Expanded gallery grid — a centered overlay panel, not
+   part of document flow. Other stacks stay exactly where they are,
+   dimmed behind the backdrop, since nothing about their layout changes
+   when a panel opens. ---------- */
+
+.grid-overlay-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(10, 11, 13, 0.75);
+	z-index: 29;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease;
+}
+
+.grid-overlay-backdrop.is-open {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.grid-overlay-panel {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%) scale(0.9);
+	z-index: 30;
+	max-width: min(90vw, 44rem);
+	max-height: 85vh;
+	overflow-y: auto;
+	background: rgba(20, 22, 28, 0.97);
+	border-radius: 0.75rem;
+	padding: 2rem 2rem 1.5rem;
+	box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.6);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.grid-overlay-panel.is-open {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translate(-50%, -50%) scale(1);
+}
+
+.grid-overlay-panel.is-hidden {
+	display: none;
+}
 
 .gallery-grid {
 	display: grid;
 	grid-template-columns: repeat(4, 8.5rem);
 	justify-content: center;
 	gap: 1.5rem;
-	margin: 0 auto;
-	padding: 1rem 1.5rem 1.25rem;
-}
-
-.gallery-grid.is-hidden {
-	display: none;
 }
 
 .polaroid-stack.is-hidden {
@@ -308,24 +391,13 @@ body,
 .grid-close-wrap {
 	display: flex;
 	justify-content: center;
-	margin-top: 2.5rem;
-	opacity: 0;
-	transition: opacity 0.3s ease;
-}
-
-.grid-close-wrap.is-visible {
-	opacity: 1;
-}
-
-.grid-close-wrap.is-hidden {
-	display: none;
+	margin-top: 1.5rem;
 }
 
 /* While viewing a photo in the lightbox, hide the "collapse grid back to
    stack" button — otherwise it faintly shows through the lightbox's
    semi-transparent backdrop, reading as a stray close button in the
-   photo view when it's actually meant only for returning from the
-   expanded grid to the stack. */
+   photo view when it's actually meant only for returning to the stack. */
 body.lightbox-open .grid-close-wrap {
 	visibility: hidden;
 }
@@ -459,6 +531,10 @@ body.lightbox-open .grid-close-wrap {
 
 	.nav-toggle {
 		display: flex !important;
+	}
+
+	body.grid-expanded .nav-toggle {
+		display: none !important;
 	}
 
 	#sidebar-nav {
