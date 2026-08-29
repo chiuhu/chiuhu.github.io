@@ -1,0 +1,47 @@
+{
+  "albums": [
+    {
+      "slug": "iceland-ring-road",
+      "title": "Iceland",
+      "location": "Iceland",
+      "date": "September 2024",
+      "cover": [
+        "https://picsum.photos/seed/iceland-cover-a/700/900",
+        "https://picsum.photos/seed/iceland-cover-b/700/900",
+        "https://picsum.photos/seed/iceland-cover-c/700/900",
+        "https://picsum.photos/seed/iceland-cover-d/700/900"
+      ],
+      "photos": [
+        { "src": "https://picsum.photos/seed/iceland-1/1200/1500", "caption": "Skógafoss waterfall" },
+        { "src": "https://picsum.photos/seed/iceland-2/1200/1500", "caption": "Diamond Beach, black sand and ice" },
+        { "src": "https://picsum.photos/seed/iceland-3/1200/1500", "caption": "Vatnajökull glacier tongue" },
+        { "src": "https://picsum.photos/seed/iceland-4/1200/1500", "caption": "Vík black sand beach" },
+        { "src": "https://picsum.photos/seed/iceland-5/1200/1500", "caption": "Kirkjufell at golden hour" },
+        { "src": "https://picsum.photos/seed/iceland-6/1200/1500", "caption": "Reykjavík rooftops at dusk" },
+        { "src": "https://picsum.photos/seed/iceland-7/1200/1500", "caption": "Highland gravel road, Ring Road detour" },
+        { "src": "https://picsum.photos/seed/iceland-8/1200/1500", "caption": "Jökulsárlón glacier lagoon" }
+      ]
+    },
+    {
+      "slug": "tokyo-nights",
+      "title": "Tokyo Nights",
+      "location": "Tokyo, Japan",
+      "date": "March 2025",
+      "cover": [
+        "https://picsum.photos/seed/tokyo-cover-a/700/900",
+        "https://picsum.photos/seed/tokyo-cover-b/700/900",
+        "https://picsum.photos/seed/tokyo-cover-c/700/900",
+        "https://picsum.photos/seed/tokyo-cover-d/700/900"
+      ],
+      "photos": [
+        { "src": "https://picsum.photos/seed/tokyo-1/1200/1500", "caption": "Shibuya crossing, rain reflections" },
+        { "src": "https://picsum.photos/seed/tokyo-2/1200/1500", "caption": "Shinjuku back alley, neon signs" },
+        { "src": "https://picsum.photos/seed/tokyo-3/1200/1500", "caption": "Senso-ji temple gate at night" },
+        { "src": "https://picsum.photos/seed/tokyo-4/1200/1500", "caption": "Tokyo Tower from Roppongi" },
+        { "src": "https://picsum.photos/seed/tokyo-5/1200/1500", "caption": "Ramen shop counter, Golden Gai" },
+        { "src": "https://picsum.photos/seed/tokyo-6/1200/1500", "caption": "Akihabara storefronts" },
+        { "src": "https://picsum.photos/seed/tokyo-7/1200/1500", "caption": "Yamanote line platform, midnight" }
+      ]
+    }
+  ]
+}
