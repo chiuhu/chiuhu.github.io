@@ -15,6 +15,15 @@
    this rule doesn't touch) is unaffected. */
 html {
 	font-size: 16px !important;
+	/* Reserves permanent space for the vertical scrollbar so it can't
+	   appear/disappear based on content height (e.g. a lower stack's
+	   hover fan-out pushing total page height just past the viewport)
+	   — that toggle was shifting the centered page content sideways.
+	   background matches body's own base color (see main.css) so the
+	   reserved gutter blends in instead of showing as a visible empty
+	   strip, which is why this was removed once before. */
+	scrollbar-gutter: stable;
+	background: #1b1f22;
 }
 
 /* main.css fades #bg in from black over 2.5s (with a 0.75s delay) —
@@ -35,6 +44,7 @@ html,
 body {
 	overflow-y: auto !important;
 	height: auto !important;
+	scrollbar-gutter: stable;
 	/* Browsers auto-adjust scroll position ("scroll anchoring") when
 	   layout above the current view shrinks — like a grid collapsing
 	   back down to its smaller stack. That's what was causing sections
@@ -42,6 +52,18 @@ body {
 	   collapsing, since their collapse is more likely to trigger the
 	   browser's anchoring than a section already near the top. */
 	overflow-anchor: none;
+	/* Hide the scrollbar's visible track/thumb — scrolling still works
+	   via wheel, trackpad, or keyboard. scrollbar-gutter above still
+	   reserves the space either way, so this doesn't reintroduce any
+	   layout shift; it just makes that reserved space blend into the
+	   background instead of showing a visible bar. */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* old Edge/IE */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+	display: none; /* Chrome, Safari, new Edge */
 }
 
 /* Confirmed via main.css: #wrapper is `display:flex; flex-direction:column;

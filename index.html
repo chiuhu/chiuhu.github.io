@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <!--
-	Dimension by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+	Dimension by Pixelarity
+	pixelarity.com | hello@pixelarity.com
+	License: pixelarity.com/license
 -->
 <html lang="en">
 	<head>
@@ -27,7 +27,7 @@
 		<!-- Favicon -->
 		<link rel="icon" href="/images/hiuhu.com_favicon.png" type="image/x-icon">
 	</head>
-	<body>
+	<body class="is-preload">
 		<!-- Wrapper -->
 		<div id="wrapper">
 			<!-- Header -->
@@ -42,14 +42,33 @@
 			<!-- Main -->
 			<!-- Footer -->
 			<footer id="footer">
-				<p class="copyright">&copy; Hiuhu | <i class="fa fa-pencil pencil-icon"></i> <a href="https://html5up.net">HTML5 UP</a>.</p>
+				<a href="/photos/" class="photos-link" aria-label="Photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="12" rx="1"/><path d="M5.5 15.5l2.7-3 2 2 2.3-3 1.5 2"/><circle cx="6" cy="9" r="1"/><rect x="9" y="3" width="12" height="12" rx="1"/></svg></a>
+				<p class="copyright">&copy; Hiuhu</p>
 			</footer>
 		</div>
+		<style>
+			.photos-link {
+				display: inline-block;
+				margin-bottom: 0.75rem;
+				opacity: 0.6;
+				border-bottom: none !important;
+				transition: opacity 0.2s ease;
+			}
+			.photos-link:hover {
+				opacity: 1;
+			}
+			.photos-link svg {
+				width: 1.25rem;
+				height: 1.25rem;
+				display: block;
+			}
+		</style>
 		<!-- BG -->
 		<div id="bg"></div>
 		<!-- Scripts -->
 		<script src="assets/js/jquery.min.js"></script>
-		<script src="assets/js/skel.min.js"></script>
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
 		<script src="assets/js/util.js"></script>
 		<script src="assets/js/main.js"></script>
 		<!-- Typing effect for tagline -->
@@ -70,8 +89,14 @@
 						el.classList.remove('is-typing');
 					}
 				}
-				// delay start to let the theme's own fade-in finish first
-				setTimeout(type, 1000);
+				// delay start to let the theme's own fade-in finish first —
+				// the header's content container has its own max-height/
+				// padding expand animation (0.25s delay + 0.75s duration =
+				// settles at 1000ms after is-preload is removed, which
+				// itself happens ~100ms after load), so starting before
+				// ~1100ms means typing begins while the container is still
+				// resizing, causing visible stutter.
+				setTimeout(type, 1400);
 			});
 		</script>
 	</body>
