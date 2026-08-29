@@ -36,6 +36,7 @@
 					<div class="inner">
 						<h1>Hiuhu</h1>
 						<p id="tagline" data-text="always a work in progress"></p>
+						<p id="tagline" data-text="a work in progress"></p>
 					</div>
 				</div>
 			</header>
@@ -71,12 +72,14 @@
 		<script src="assets/js/breakpoints.min.js"></script>
 		<script src="assets/js/util.js"></script>
 		<script src="assets/js/main.js"></script>
+
 		<!-- Typing effect for tagline -->
 		<script>
 			window.addEventListener('load', function () {
 				var el = document.getElementById('tagline');
 				var text = el.getAttribute('data-text');
 				var i = 0;
+
 				function type() {
 					if (i === 0) {
 						el.classList.add('is-typing');
@@ -99,5 +102,11 @@
 				setTimeout(type, 1400);
 			});
 		</script>
+
+				// delay start to let the theme's own fade-in finish first
+				setTimeout(type, 1000);
+			});
+		</script>
+
 	</body>
 </html>
