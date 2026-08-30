@@ -176,59 +176,91 @@
 				buildGrid();
 				ensureGridBackdrop();
 
-				// The stack stays opacity-only hidden (never display:none),
-				// so it keeps occupying its normal layout space the whole
-				// time the overlay is open — meaning this section's height
-				// never changes, and neither does anything below it on the
-				// page. That's what lets other stacks just sit still,
-				// dimmed, in the background instead of needing to react.
-				var stackItems = Array.prototype.slice.call(stack.children);
-				var stackCenters = stackItems.map(centerOf);
-				stack.classList.add('is-fading');
-
-				panel.classList.remove('is-hidden');
-				reflow(panel);
-				panel.classList.add('is-open');
-				gridBackdropEl.classList.add('is-open');
-
-				var gridChildren = Array.prototype.slice.call(grid.children);
-				var flipCount = Math.min(FLIP_COUNT, gridChildren.length, stackCenters.length);
-
-				for (var i = 0; i < gridChildren.length; i++) {
-					var child = gridChildren[i];
-					if (i < flipCount) {
-						var target = centerOf(child);
-						var dx = stackCenters[i].x - target.x;
-						var dy = stackCenters[i].y - target.y;
-						child.style.transition = 'none';
-						child.style.opacity = '';
-						child.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) rotate(' + STACK_ROTATIONS[i] + 'deg)';
-					} else {
-						// No stack card to fly from — just fade in.
-						child.style.transition = 'none';
-						child.style.transform = '';
-						child.style.opacity = '0';
-					}
-				}
-				reflow(grid);
-
-				requestAnimationFrame(function () {
-					requestAnimationFrame(function () {
-						for (var i = 0; i < gridChildren.length; i++) {
-							var child = gridChildren[i];
-							if (i < flipCount) {
-								child.style.transition = 'transform ' + TRANSITION_MS + 'ms ease';
-								child.style.transform = '';
-							} else {
-								child.style.transition = 'opacity ' + TRANSITION_MS + 'ms ease';
-								child.style.opacity = '1';
-							}
-						}
-					});
-				});
-
+				// Claim this as the open section immediately (even though
+				// the actual reveal below may still be waiting on images)
+				// so a rapid click on a different stack during that wait
+				// correctly triggers this one's collapse first, rather
+				// than both stacks trying to open at once.
 				openSection = { slug: album.slug, collapse: collapse };
 				document.body.classList.add('grid-expanded');
+
+				var gridChildren = Array.prototype.slice.call(grid.children);
+				var flipCount = Math.min(FLIP_COUNT, gridChildren.length, stack.children.length);
+
+				var flipImgsToLoad = 0;
+				for (var i = 0; i < flipCount; i++) {
+					var img = gridChildren[i].querySelector('img');
+					if (!(img.complete && img.naturalWidth !== 0)) flipImgsToLoad++;
+				}
+
+				// Nothing below changes anything visible yet — the stack
+				// stays exactly as it is, still fully shown, until we're
+				// ready to do the entire reveal (stack fade, panel,
+				// backdrop, cards flying in) in one uninterrupted motion.
+				// Revealing the panel/grid any earlier than this would
+				// show blank white polaroids sitting in their final grid
+				// spots while images are still loading — the opposite of
+				// what the fly-in animation is supposed to look like.
+				function reveal() {
+					// Stack positions are measured now, right before it
+					// fades — not any earlier, since capturing them sooner
+					// wouldn't reflect any last-moment layout changes.
+					var stackItems = Array.prototype.slice.call(stack.children);
+					var stackCenters = stackItems.map(centerOf);
+					stack.classList.add('is-fading');
+
+					panel.classList.remove('is-hidden');
+					reflow(panel);
+					panel.classList.add('is-open');
+					gridBackdropEl.classList.add('is-open');
+
+					for (var i = 0; i < gridChildren.length; i++) {
+						var child = gridChildren[i];
+						if (i < flipCount) {
+							var target = centerOf(child);
+							var dx = stackCenters[i].x - target.x;
+							var dy = stackCenters[i].y - target.y;
+							child.style.transition = 'none';
+							child.style.opacity = '';
+							child.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) rotate(' + STACK_ROTATIONS[i] + 'deg)';
+						} else {
+							// No stack card to fly from — just fade in.
+							child.style.transition = 'none';
+							child.style.transform = '';
+							child.style.opacity = '0';
+						}
+					}
+					reflow(grid);
+
+					requestAnimationFrame(function () {
+						requestAnimationFrame(function () {
+							for (var i = 0; i < gridChildren.length; i++) {
+								var child = gridChildren[i];
+								if (i < flipCount) {
+									child.style.transition = 'transform ' + TRANSITION_MS + 'ms ease';
+									child.style.transform = '';
+								} else {
+									child.style.transition = 'opacity ' + TRANSITION_MS + 'ms ease';
+									child.style.opacity = '1';
+								}
+							}
+						});
+					});
+				}
+
+				if (flipImgsToLoad === 0) {
+					reveal();
+				} else {
+					var loadedCount = 0;
+					for (var j = 0; j < flipCount; j++) {
+						var flipImg = gridChildren[j].querySelector('img');
+						if (flipImg.complete && flipImg.naturalWidth !== 0) continue;
+						flipImg.addEventListener('load', function () {
+							loadedCount++;
+							if (loadedCount === flipImgsToLoad) reveal();
+						}, { once: true });
+					}
+				}
 			}
 
 			function collapse() {
@@ -412,25 +444,41 @@
 		showPhoto(index);
 
 		var sourceEl = currentSourceEls[currentIndex];
-		if (sourceEl) {
-			lightboxFrame.style.transition = 'none';
-			lightboxFrame.style.transform = flipTransform(sourceEl);
-			reflow(lightboxFrame);
+
+		function runFlipIn() {
+			if (sourceEl) {
+				lightboxFrame.style.transition = 'none';
+				lightboxFrame.style.transform = flipTransform(sourceEl);
+				reflow(lightboxFrame);
+			}
+
+			lightboxEl.classList.add('is-open');
+			document.body.classList.add('lightbox-open');
+
+			// Double rAF: guarantees the browser has painted the jumped-to-source
+			// state on one frame before we animate away from it on the next —
+			// a single rAF can occasionally fire before that paint happens,
+			// which is what was causing the jump.
+			requestAnimationFrame(function () {
+				requestAnimationFrame(function () {
+					lightboxFrame.style.transition = '';
+					lightboxFrame.style.transform = '';
+				});
+			});
 		}
 
-		lightboxEl.classList.add('is-open');
-		document.body.classList.add('lightbox-open');
-
-		// Double rAF: guarantees the browser has painted the jumped-to-source
-		// state on one frame before we animate away from it on the next —
-		// a single rAF can occasionally fire before that paint happens,
-		// which is what was causing the jump.
-		requestAnimationFrame(function () {
-			requestAnimationFrame(function () {
-				lightboxFrame.style.transition = '';
-				lightboxFrame.style.transform = '';
-			});
-		});
+		// The frame has no fixed size of its own — it sizes to fit the
+		// image (max-width/max-height only), so its real dimensions
+		// aren't known until the image has actually loaded. Measuring
+		// it any earlier (as flipTransform does) gives the wrong
+		// scale/position, which then visibly snaps once the image
+		// arrives. A cached image reports .complete immediately; an
+		// uncached one needs its load event first.
+		if (lightboxImg.complete && lightboxImg.naturalWidth !== 0) {
+			runFlipIn();
+		} else {
+			lightboxImg.addEventListener('load', runFlipIn, { once: true });
+		}
 	}
 
 	function closeLightbox() {
